@@ -1,0 +1,133 @@
+const fs = require('fs');
+
+const setupHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>First Time Setup - Print Kiosk</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <span>🖨️</span> Print Shop Kiosk Setup
+    </div>
+  </header>
+  
+  <main class="container" style="max-width: 600px;">
+    <div class="card">
+      <div class="card-title">Initial Application Setup</div>
+      <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.95rem;">
+        Welcome! Please configure your admin credentials, shop information, and pricing rates to get started.
+      </p>
+
+      <form id="setupForm">
+        <h4 style="margin-bottom: 1rem; color: var(--primary);">1. Admin Security Credentials</h4>
+        <div class="grid-2">
+          <div class="form-group">
+            <label for="admin_id">Admin ID / Username</label>
+            <input type="text" id="admin_id" class="form-control" placeholder="admin" required>
+          </div>
+          <div class="form-group">
+            <label for="password">Admin Password</label>
+            <input type="password" id="password" class="form-control" placeholder="••••••••" required>
+          </div>
+        </div>
+
+        <h4 style="margin-top: 1rem; margin-bottom: 1rem; color: var(--primary);">2. Shop & Kiosk Details</h4>
+        <div class="form-group">
+          <label for="shop_name">Shop Name (Displayed on Customer Page)</label>
+          <input type="text" id="shop_name" class="form-control" placeholder="Speedy Print Kiosk" required>
+        </div>
+
+        <h4 style="margin-top: 1rem; margin-bottom: 1rem; color: var(--primary);">3. Pricing Configuration (INR)</h4>
+        <div class="grid-2">
+          <div class="form-group">
+            <label for="bw_rate">B&W Price per Page (₹)</label>
+            <input type="number" step="0.5" id="bw_rate" class="form-control" value="2.00" required>
+          </div>
+          <div class="form-group">
+            <label for="color_rate">Color Price per Page (₹)</label>
+            <input type="number" step="0.5" id="color_rate" class="form-control" value="10.00" required>
+          </div>
+        </div>
+
+        <h4 style="margin-top: 1rem; margin-bottom: 1rem; color: var(--primary);">4. Razorpay Integration (API Keys)</h4>
+        <div class="form-group">
+          <label for="razorpay_key_id">Razorpay Key ID</label>
+          <input type="text" id="razorpay_key_id" class="form-control" placeholder="rzp_test_XXXXXXXX">
+        </div>
+        <div class="form-group">
+          <label for="razorpay_key_secret">Razorpay Key Secret</label>
+          <input type="password" id="razorpay_key_secret" class="form-control" placeholder="Secret Key">
+        </div>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.5rem;">
+          * Note: If left blank or set to test mode, the system runs with local payment simulation for testing.
+        </p>
+
+        <div id="errorMsg" style="color: var(--danger); font-size: 0.9rem; margin-bottom: 1rem;" class="hidden"></div>
+
+        <button type="submit" class="btn btn-primary btn-block">Save Configuration & Launch Kiosk</button>
+      </form>
+    </div>
+  </main>
+
+  <script src="/js/setup.js"></script>
+</body>
+</html>
+`;
+
+const setupJs = `document.addEventListener('DOMContentLoaded', () => {
+  const setupForm = document.getElementById('setupForm');
+  const errorMsg = document.getElementById('errorMsg');
+
+  // Check if app is already configured
+  fetch('/api/status')
+    .then(res => res.json())
+    .then(data => {
+      if (data.is_configured) {
+        window.location.href = '/index.html';
+      }
+    });
+
+  setupForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    errorMsg.classList.add('hidden');
+
+    const configData = {
+      admin_id: document.getElementById('admin_id').value.trim(),
+      password: document.getElementById('password').value,
+      shop_name: document.getElementById('shop_name').value.trim(),
+      bw_rate: document.getElementById('bw_rate').value,
+      color_rate: document.getElementById('color_rate').value,
+      razorpay_key_id: document.getElementById('razorpay_key_id').value.trim(),
+      razorpay_key_secret: document.getElementById('razorpay_key_secret').value.trim()
+    };
+
+    try {
+      const res = await fetch('/api/setup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(configData)
+      });
+      const result = await res.json();
+
+      if (result.success) {
+        alert('Configuration saved! Redirecting to Admin Login...');
+        window.location.href = '/login.html';
+      } else {
+        errorMsg.textContent = result.message || 'Setup failed. Please check inputs.';
+        errorMsg.classList.remove('hidden');
+      }
+    } catch (err) {
+      errorMsg.textContent = 'Server error during setup. Please try again.';
+      errorMsg.classList.remove('hidden');
+    }
+  });
+});
+`;
+
+fs.writeFileSync('public/setup.html', setupHtml, 'utf8');
+fs.writeFileSync('public/js/setup.js', setupJs, 'utf8');
+console.log('setup.html and setup.js written');
