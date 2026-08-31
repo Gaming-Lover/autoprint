@@ -1,0 +1,12 @@
+{
+  "settings": {
+    "is_configured": false,
+    "shop_name": "My Print Shop",
+    "razorpay_key_id": "",
+    "razorpay_key_secret": "",
+    "bw_rate": 2,
+    "color_rate": 10
+  },
+  "users": [],
+  "orders": []
+}
